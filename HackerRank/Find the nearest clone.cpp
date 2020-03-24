@@ -4,47 +4,53 @@ using namespace std;
 
 vector<string> split_string(string);
 
-const int MAX_N = 1<<20;
+// Complete the findShortest function below.
+
+const int MAX_N = 1000010;
 const int INF = 1<<28;
 
 vector<int> adj[MAX_N];
+vector<long> color;
 int minDistance;
-int colors[MAX_N];
 int wantedColor;
 
-void createGraph(int nodeCount, vector<int> from, vector<int> to) {
-    for(int i = 1; i <= nodeCount; i ++) {
+void createGraph(int n, vector<int> &from, vector<int> &to) {
+    for(int i = 0; i < n; i ++) {
         adj[i].clear();
     }
 
     for(int i = 0; i < from.size(); i ++) {
+        from[i] --;
+        to[i] --;
         adj[from[i]].push_back(to[i]);
         adj[to[i]].push_back(from[i]);
     }
 }
 
 int dfs(int node, int parent) {
-    int minFromNode = colors[node] == wantedColor ? 0 : INF;
-    vector<int> subtree;
-
-    for(auto child : adj[node]) {
-        if(child != parent) {
-            subtree.push_back(dfs(child, node));
+    int minFromThisNode = color[node] == wantedColor ? 0 : INF;
+    vector<int> dists;
+    for(int other : adj[node]) {
+        if(other != parent) {
+            dists.push_back(dfs(other, node));
         }
     }
 
-    if(subtree.size() == 0) {
-        return minFromNode;
+    if(dists.size() == 0) {
+         return minFromThisNode;
     }
 
-    sort(subtree.begin(), subtree.end());
-    minDistance = min(minDistance, (colors[node] == wantedColor ? subtree[0]+1 : INF));
-    minFromNode = min(minFromNode, subtree[0]+1);
-
-    if(subtree.size() >= 2) {
-        minDistance = min(minDistance, subtree[0]+subtree[1]+2);
+    sort(dists.begin(), dists.end());
+    minFromThisNode = min(minFromThisNode, dists[0] + 1);
+    if(color[node] == wantedColor) {
+        minDistance = min(minDistance, dists[0] + 1);
     }
-    return minFromNode;
+
+    if(dists.size() >= 2) {
+        minDistance = min(minDistance, dists[0] + dists[1] + 2);
+    }
+
+    return minFromThisNode;
 }
 
 /*
@@ -55,27 +61,19 @@ int dfs(int node, int parent) {
  * 3. An edge exists between <name>_from[i] to <name>_to[i].
  *
  */
-int findShortest(int nodeCount, vector<int> from, vector<int> to, vector<long> _colors, int _wantedColor) {
+int findShortest(int nodeCount, vector<int> from, vector<int> to, vector<long> _color, int _wantedColor) {
+    color = _color;
+    wantedColor = _wantedColor;
+
     createGraph(nodeCount, from, to);
 
-    wantedColor = _wantedColor;
-    for(int i = 0; i < nodeCount; i ++) {
-        colors[i+1] = _colors[i];
+    if(count(color.begin(), color.end(), wantedColor) < 2) {
+        return -1;
     }
-
-    for(int i = 1; i <= nodeCount; i ++) {
-        if(colors[i] == wantedColor) {
-            minDistance = INF;
-            dfs(i+1, -1);
-            if(minDistance == INF) {
-                return -1;
-            } else {
-                return minDistance;
-            }
-        }
-    }
-
-    return -1;    
+    
+    minDistance = INF;
+    dfs(0, -1);
+    return minDistance;
 }
 
 int main()
@@ -150,4 +148,3 @@ vector<string> split_string(string input_string) {
 
     return splits;
 }
-
